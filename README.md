@@ -1,10 +1,10 @@
-# AI-Powered Text-to-Image Generator  
-### Internship Task – Talrn.com  
+ AI-Powered Text-to-Image Generator  
+Internship Task – Talrn.com  
 **Author:** J Kupendra Reddy  
 
 ---
 
-## 📌 Overview  
+ 📌 Overview  
 This project is a text-to-image generator built using open-source diffusion models.  
 It converts user text prompts into images using a lightweight AI model and provides a Streamlit web interface.
 
@@ -18,38 +18,34 @@ This project includes:
 
 ---
 
-## 🖼 Features
+ 🖼 Features
 
-### ✔ Text-to-Image Generation
+ ✔ Text-to-Image Generation
 - Generate 1–2 images  
 - Adjustable steps & guidance  
 - Negative prompts supported  
 
-### ✔ Style Presets
+✔ Style Presets
 - default  
 - anime  
 - photorealistic  
 - cartoon  
 
-### ✔ Web Interface (Streamlit)
+✔ Web Interface (Streamlit)
 - Enter prompt  
 - Adjust settings  
 - View generated images  
 - Download images  
 
-### ✔ Storage
+✔ Storage
 - Images saved in the `samples/` folder  
 - Metadata stored in `metadata/` folder (JSON format)  
 
 ---
 
-## 🗂 Project Structure
+🚀 How to Run
 
----
-
-## 🚀 How to Run
-
-### 1️⃣ Create virtual environment
+1️⃣ Create virtual environment
 ```bash
 python -m venv venv
 
