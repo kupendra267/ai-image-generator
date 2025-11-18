@@ -45,3 +45,11 @@ This project includes:
 
 ## 🗂 Project Structure
 
+---
+
+## 🚀 How to Run
+
+### 1️⃣ Create virtual environment
+```bash
+python -m venv venv
+
