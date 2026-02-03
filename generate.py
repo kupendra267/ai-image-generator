@@ -1,5 +1,6 @@
 from diffusers import StableDiffusionPipeline
 import torch
+import streamlit as st
 
 STYLE_PRESETS = {
     "default": "",
@@ -8,20 +9,20 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-def get_device():
-    return "cuda" if torch.cuda.is_available() else "cpu"
+MODEL_ID = "gsdf/Counterfeit-V2.5"
 
+# ✅ Load model ONCE (very important)
+@st.cache_resource
 def load_model():
-    model_id = "gsdf/Counterfeit-V2.5"  # your small model
-    device = get_device()
-
     pipe = StableDiffusionPipeline.from_pretrained(
-        model_id,
+        MODEL_ID,
         torch_dtype=torch.float32,
         safety_checker=None
     )
-    pipe = pipe.to(device)
+    pipe = pipe.to("cpu")                 # ✅ force CPU
+    pipe.enable_attention_slicing()        # ✅ reduce RAM
     return pipe
+
 
 def build_prompt(prompt, style="default"):
     style_text = STYLE_PRESETS.get(style, "")
@@ -29,23 +30,26 @@ def build_prompt(prompt, style="default"):
         return f"{prompt}, {style_text}"
     return prompt
 
+
 def generate_images(
     prompt,
-    num_images=1,
     negative_prompt="",
     style="default",
     guidance_scale=6.0,
-    num_inference_steps=20
+    num_inference_steps=15
 ):
     pipe = load_model()
     final_prompt = build_prompt(prompt, style)
 
-    images = pipe(
-        prompt=[final_prompt] * num_images,
-        negative_prompt=[negative_prompt] * num_images if negative_prompt else None,
+    result = pipe(
+        prompt=final_prompt,
+        negative_prompt=negative_prompt if negative_prompt else None,
         num_inference_steps=num_inference_steps,
-        guidance_scale=guidance_scale
-    ).images
+        guidance_scale=guidance_scale,
+        height=512,
+        width=512
+    )
 
-    return images
+    return result.images
+
 
