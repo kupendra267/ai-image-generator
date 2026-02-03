@@ -2,6 +2,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 import os
+import streamlit as st
 
 STYLE_PRESETS = {
     "default": "",
@@ -29,18 +30,21 @@ def generate_images(
 ):
     final_prompt = build_prompt(prompt, style)
 
-    response = requests.post(
-        API_URL,
-        headers=HEADERS,
-        json={
-            "inputs": final_prompt,
-            "parameters": {
-                "negative_prompt": negative_prompt,
-                "guidance_scale": guidance_scale,
-                "num_inference_steps": num_inference_steps
-            }
+    payload = {
+        "inputs": final_prompt,
+        "parameters": {
+            "negative_prompt": negative_prompt,
+            "guidance_scale": guidance_scale,
+            "num_inference_steps": num_inference_steps
         }
-    )
+    }
+
+    response = requests.post(API_URL, headers=HEADERS, json=payload)
+
+    # If HuggingFace returns JSON error instead of image
+    if response.headers.get("content-type", "").startswith("application/json"):
+        st.error(response.json())
+        return []
 
     image = Image.open(BytesIO(response.content))
     return [image]
