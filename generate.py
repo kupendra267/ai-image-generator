@@ -11,9 +11,12 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+# ✅ NEW Hugging Face Router endpoint (IMPORTANT)
+API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-2"
+
 HEADERS = {
-    "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}"
+    "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}",
+    "Accept": "image/png"
 }
 
 def build_prompt(prompt, style):
@@ -41,13 +44,12 @@ def generate_images(
 
     response = requests.post(API_URL, headers=HEADERS, json=payload)
 
-    # If HuggingFace returns JSON error instead of image
+    # If HF returns JSON (error / loading)
     if response.headers.get("content-type", "").startswith("application/json"):
         st.error(response.json())
         return []
 
     image = Image.open(BytesIO(response.content))
     return [image]
-
 
 
