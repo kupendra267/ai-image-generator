@@ -9,8 +9,8 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-# ✅ CORRECT Hugging Face SPACE (not model repo)
-client = Client("stabilityai/stable-diffusion-2-1")
+# ✅ REAL, PUBLIC, WORKING SPACE
+client = Client("runwayml/stable-diffusion-v1-5")
 
 
 def build_prompt(prompt, style):
@@ -29,17 +29,17 @@ def generate_images(
 
     try:
         result = client.predict(
-            final_prompt,        # prompt
-            negative_prompt,     # negative prompt
-            num_inference_steps, # steps
-            guidance_scale,      # guidance scale
+            final_prompt,          # prompt
+            negative_prompt,       # negative prompt
+            num_inference_steps,   # steps
+            guidance_scale,        # guidance scale
             api_name="/predict"
         )
 
-        # result is a file path
+        # result is image path
         image = Image.open(result)
         return [image]
 
     except Exception as e:
-        st.error(f"Space generation error: {e}")
+        st.error(f"Image generation failed: {e}")
         return []
