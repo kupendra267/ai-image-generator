@@ -1,21 +1,16 @@
 import streamlit as st
 from generate import generate_images, STYLE_PRESETS
+import io
 
-# ------------------ PAGE CONFIG ------------------
-st.set_page_config(
-    page_title="AI Image Generator",
-    layout="wide"
-)
+st.set_page_config(page_title="AI Image Generator", layout="wide")
 
-# ------------------ TITLE ------------------
-st.title("🖼️ AI-Powered Text-to-Image Generator")
+st.title("🖼️ AI Image Generator (Stable Diffusion)")
 
 st.write(
-    "Generate images from text prompts using an AI model. "
-    "This app uses a cloud-based inference API, so the first request may take a little longer."
+    "Generate images using Hugging Face Stable Diffusion. "
+    "First generation may take 20–30 seconds."
 )
 
-# ------------------ INPUTS ------------------
 prompt = st.text_area(
     "Text Prompt",
     value="a cute anime girl smiling",
@@ -30,41 +25,22 @@ negative_prompt = st.text_input(
 col1, col2 = st.columns(2)
 
 with col1:
-    style = st.selectbox(
-        "Style",
-        options=list(STYLE_PRESETS.keys()),
-        index=0
-    )
+    style = st.selectbox("Style", list(STYLE_PRESETS.keys()))
 
 with col2:
-    guidance_scale = st.slider(
-        "Guidance Scale",
-        min_value=1.0,
-        max_value=12.0,
-        value=7.5
-    )
+    guidance_scale = st.slider("Guidance Scale", 1.0, 12.0, 7.5)
 
-num_steps = st.slider(
-    "Inference Steps",
-    min_value=10,
-    max_value=30,
-    value=20
-)
+num_steps = st.slider("Inference Steps", 10, 30, 20)
 
-st.markdown(
-    f"**Note:** First generation may take ~20–30 seconds due to model loading."
-)
+# 🔍 Debug (remove later if you want)
+st.caption(f"HF Token loaded: {bool(st.secrets.get('HF_API_TOKEN'))}")
 
-# ------------------ GENERATE BUTTON ------------------
-generate_btn = st.button("🚀 Generate Image")
-
-# ------------------ GENERATION ------------------
-if generate_btn:
+if st.button("🚀 Generate Image"):
     if not prompt.strip():
-        st.error("Please enter a text prompt.")
+        st.error("Enter a prompt")
         st.stop()
 
-    with st.spinner("Generating image… Please wait."):
+    with st.spinner("Generating image…"):
         images = generate_images(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -73,32 +49,19 @@ if generate_btn:
             num_inference_steps=num_steps
         )
 
-    # 🚨 If API returned error / loading response
     if not images:
-        st.info("If this is your first request, please wait 20–30 seconds and try again.")
+        st.info("If this is first run, wait 30 seconds and try again.")
         st.stop()
 
-    # ------------------ DISPLAY RESULT ------------------
-    st.success("Image generated successfully!")
+    img = images[0]
+    st.image(img, use_column_width=True)
 
-    image = images[0]
-    st.image(image, caption="Generated Image", use_column_width=True)
-
-    # ------------------ DOWNLOAD BUTTON ------------------
-    import io
-    img_bytes = io.BytesIO()
-    image.save(img_bytes, format="PNG")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
 
     st.download_button(
-        label="⬇️ Download Image",
-        data=img_bytes.getvalue(),
-        file_name="generated_image.png",
-        mime="image/png"
+        "⬇️ Download Image",
+        buf.getvalue(),
+        "generated.png",
+        "image/png"
     )
-
-# ------------------ FOOTER ------------------
-st.markdown("---")
-st.caption(
-    "Built with Streamlit & Hugging Face Inference API • "
-    "Deployed on Streamlit Cloud"
-)
