@@ -5,14 +5,20 @@ st.set_page_config(page_title="AI Image Generator", layout="wide")
 
 st.title("🖼️ AI-Powered Text-to-Image Generator")
 
+st.write(
+    "Generate images from text using an AI model. "
+    "This app uses a cloud-based inference API, so it works smoothly without heavy models."
+)
+
+# Inputs
 prompt = st.text_area(
-    "Text prompt",
+    "Text Prompt",
     value="a cute anime girl smiling",
     height=80
 )
 
 negative_prompt = st.text_input(
-    "Negative prompt (optional)",
+    "Negative Prompt (optional)",
     value="low quality, blurry"
 )
 
@@ -21,12 +27,13 @@ style = st.selectbox(
     options=list(STYLE_PRESETS.keys())
 )
 
-guidance_scale = st.slider("Guidance scale", 1.0, 12.0, 7.5)
-num_steps = st.slider("Inference steps", 10, 30, 20)
+guidance_scale = st.slider("Guidance Scale", 1.0, 12.0, 7.5)
+num_steps = st.slider("Inference Steps", 10, 30, 20)
 
+# Generate button
 if st.button("🚀 Generate Image"):
     if not prompt.strip():
-        st.error("Please enter a prompt")
+        st.error("Please enter a prompt.")
     else:
         with st.spinner("Generating image..."):
             images = generate_images(
@@ -37,4 +44,6 @@ if st.button("🚀 Generate Image"):
                 num_inference_steps=num_steps
             )
 
-        st.image(images[0], caption="Generated Image", use_column_width=True)
+        if images:
+            st.image(images[0], caption="Generated Image", use_column_width=True)
+
