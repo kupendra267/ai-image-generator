@@ -11,11 +11,13 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
+# ✅ NEW OFFICIAL HF ROUTER ENDPOINT
+API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-2-1"
 
 HEADERS = {
     "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}",
-    "Accept": "image/png"
+    "Accept": "image/png",
+    "Content-Type": "application/json"
 }
 
 def build_prompt(prompt, style):
@@ -39,15 +41,21 @@ def generate_images(
         }
     }
 
-    response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=60)
+    response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=90)
 
+    # ❌ Handle HF errors cleanly
     if response.status_code != 200:
-        st.error(f"Hugging Face API error {response.status_code}: {response.text}")
+        st.error(f"Hugging Face error {response.status_code}: {response.text}")
+        return []
+
+    # ❌ Model loading / JSON response
+    if "application/json" in response.headers.get("content-type", ""):
+        st.warning("Model is loading. Please wait 20–30 seconds and try again.")
         return []
 
     try:
         image = Image.open(BytesIO(response.content))
         return [image]
-    except Exception:
-        st.error("Model is loading. Please wait 20–30 seconds and try again.")
+    except Exception as e:
+        st.error(f"Failed to decode image: {e}")
         return []
