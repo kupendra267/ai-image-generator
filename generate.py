@@ -11,7 +11,6 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-# ✅ NEW Hugging Face Router endpoint (IMPORTANT)
 API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-2"
 
 HEADERS = {
@@ -42,14 +41,33 @@ def generate_images(
         }
     }
 
-    response = requests.post(API_URL, headers=HEADERS, json=payload)
+    response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=60)
 
-    # If HF returns JSON (error / loading)
-    if response.headers.get("content-type", "").startswith("application/json"):
-        st.error(response.json())
+    # ❌ HTTP error (401, 403, 429, 503)
+    if response.status_code != 200:
+        st.error(f"Hugging Face API error {response.status_code}: {response.text}")
         return []
 
-    image = Image.open(BytesIO(response.content))
-    return [image]
+    content_type = response.headers.get("content-type", "")
 
+    # ❌ HF returned JSON instead of image
+    if "application/json" in content_type:
+        st.warning("Model is loading or request was rejected. Please try again in 20–30 seconds.")
+        try:
+            st.json(response.json())
+        except Exception:
+            pass
+        return []
 
+    # ❌ HF returned something that is not an image
+    if "image" not in content_type:
+        st.error("Received non-image response from Hugging Face.")
+        return []
+
+    # ✅ Safe image load
+    try:
+        image = Image.open(BytesIO(response.content))
+        return [image]
+    except Exception as e:
+        st.error(f"Failed to decode image: {e}")
+        return []
