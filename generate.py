@@ -1,7 +1,6 @@
 import requests
 from PIL import Image
 from io import BytesIO
-import os
 import streamlit as st
 
 STYLE_PRESETS = {
@@ -11,12 +10,8 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-2"
-
-HEADERS = {
-    "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}",
-    "Accept": "image/png"
-}
+# ✅ Public Stable Diffusion Space (no auth required)
+API_URL = "https://hf.space/embed/stabilityai/stable-diffusion/+/api/predict"
 
 def build_prompt(prompt, style):
     style_text = STYLE_PRESETS.get(style, "")
@@ -33,41 +28,26 @@ def generate_images(
     final_prompt = build_prompt(prompt, style)
 
     payload = {
-        "inputs": final_prompt,
-        "parameters": {
-            "negative_prompt": negative_prompt,
-            "guidance_scale": guidance_scale,
-            "num_inference_steps": num_inference_steps
-        }
+        "data": [
+            final_prompt,          # prompt
+            negative_prompt,       # negative prompt
+            num_inference_steps,   # steps
+            guidance_scale         # guidance scale
+        ]
     }
 
-    response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=60)
+    response = requests.post(API_URL, json=payload)
 
-    # ❌ HTTP error (401, 403, 429, 503)
     if response.status_code != 200:
-        st.error(f"Hugging Face API error {response.status_code}: {response.text}")
+        st.error(f"Space API error: {response.text}")
         return []
 
-    content_type = response.headers.get("content-type", "")
-
-    # ❌ HF returned JSON instead of image
-    if "application/json" in content_type:
-        st.warning("Model is loading or request was rejected. Please try again in 20–30 seconds.")
-        try:
-            st.json(response.json())
-        except Exception:
-            pass
-        return []
-
-    # ❌ HF returned something that is not an image
-    if "image" not in content_type:
-        st.error("Received non-image response from Hugging Face.")
-        return []
-
-    # ✅ Safe image load
     try:
-        image = Image.open(BytesIO(response.content))
+        result = response.json()
+        image_url = result["data"][0]
+        image_bytes = requests.get(image_url).content
+        image = Image.open(BytesIO(image_bytes))
         return [image]
     except Exception as e:
-        st.error(f"Failed to decode image: {e}")
+        st.error(f"Failed to process image: {e}")
         return []
