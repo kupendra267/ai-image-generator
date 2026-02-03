@@ -1,5 +1,7 @@
-from gradio_client import Client
+import requests
 from PIL import Image
+from io import BytesIO
+import os
 import streamlit as st
 
 STYLE_PRESETS = {
@@ -9,9 +11,12 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-# ✅ REAL, PUBLIC, WORKING SPACE
-client = Client("runwayml/stable-diffusion-v1-5")
+API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1"
 
+HEADERS = {
+    "Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}",
+    "Accept": "image/png"
+}
 
 def build_prompt(prompt, style):
     style_text = STYLE_PRESETS.get(style, "")
@@ -25,21 +30,24 @@ def generate_images(
     guidance_scale=7.5,
     num_inference_steps=20
 ):
-    final_prompt = build_prompt(prompt, style)
+    payload = {
+        "inputs": build_prompt(prompt, style),
+        "parameters": {
+            "negative_prompt": negative_prompt,
+            "guidance_scale": guidance_scale,
+            "num_inference_steps": num_inference_steps
+        }
+    }
+
+    response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=60)
+
+    if response.status_code != 200:
+        st.error(f"Hugging Face API error {response.status_code}: {response.text}")
+        return []
 
     try:
-        result = client.predict(
-            final_prompt,          # prompt
-            negative_prompt,       # negative prompt
-            num_inference_steps,   # steps
-            guidance_scale,        # guidance scale
-            api_name="/predict"
-        )
-
-        # result is image path
-        image = Image.open(result)
+        image = Image.open(BytesIO(response.content))
         return [image]
-
-    except Exception as e:
-        st.error(f"Image generation failed: {e}")
+    except Exception:
+        st.error("Model is loading. Please wait 20–30 seconds and try again.")
         return []
