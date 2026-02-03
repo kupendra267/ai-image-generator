@@ -1,6 +1,5 @@
-import requests
+from gradio_client import Client
 from PIL import Image
-from io import BytesIO
 import streamlit as st
 
 STYLE_PRESETS = {
@@ -10,8 +9,9 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-# ✅ Public Stable Diffusion Space (no auth required)
-API_URL = "https://hf.space/embed/stabilityai/stable-diffusion/+/api/predict"
+# ✅ Public Stable Diffusion Space
+client = Client("stabilityai/stable-diffusion")
+
 
 def build_prompt(prompt, style):
     style_text = STYLE_PRESETS.get(style, "")
@@ -27,27 +27,23 @@ def generate_images(
 ):
     final_prompt = build_prompt(prompt, style)
 
-    payload = {
-        "data": [
+    try:
+        result = client.predict(
             final_prompt,          # prompt
             negative_prompt,       # negative prompt
             num_inference_steps,   # steps
-            guidance_scale         # guidance scale
-        ]
-    }
+            guidance_scale,        # guidance scale
+            api_name="/predict"
+        )
 
-    response = requests.post(API_URL, json=payload)
+        # Result is image path or PIL image
+        if isinstance(result, Image.Image):
+            return [result]
 
-    if response.status_code != 200:
-        st.error(f"Space API error: {response.text}")
-        return []
-
-    try:
-        result = response.json()
-        image_url = result["data"][0]
-        image_bytes = requests.get(image_url).content
-        image = Image.open(BytesIO(image_bytes))
+        # If path returned
+        image = Image.open(result)
         return [image]
+
     except Exception as e:
-        st.error(f"Failed to process image: {e}")
+        st.error(f"Space generation error: {e}")
         return []
