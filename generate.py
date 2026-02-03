@@ -9,8 +9,8 @@ STYLE_PRESETS = {
     "cartoon": "cartoon style, flat colors, bold outlines"
 }
 
-# ✅ Public Stable Diffusion Space
-client = Client("stabilityai/stable-diffusion")
+# ✅ CORRECT Hugging Face SPACE (not model repo)
+client = Client("stabilityai/stable-diffusion-2-1")
 
 
 def build_prompt(prompt, style):
@@ -29,18 +29,14 @@ def generate_images(
 
     try:
         result = client.predict(
-            final_prompt,          # prompt
-            negative_prompt,       # negative prompt
-            num_inference_steps,   # steps
-            guidance_scale,        # guidance scale
+            final_prompt,        # prompt
+            negative_prompt,     # negative prompt
+            num_inference_steps, # steps
+            guidance_scale,      # guidance scale
             api_name="/predict"
         )
 
-        # Result is image path or PIL image
-        if isinstance(result, Image.Image):
-            return [result]
-
-        # If path returned
+        # result is a file path
         image = Image.open(result)
         return [image]
 
